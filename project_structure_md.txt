@@ -2,6 +2,7 @@
 
 ```
 ├── .env
+├── .env.example
 ├── README.md
 ├── core
 ├── curators.json
@@ -33,6 +34,7 @@
 │           └── prompt_builder.py
 ├── project_structure.txt
 ├── project_structure_md.txt
+├── requirements.txt
 ├── scripts
 │   ├── debug_env.py
 │   ├── generate_structure.py

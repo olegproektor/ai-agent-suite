@@ -1,6 +1,10 @@
-import os
 import sys
+import os
 import asyncio
+
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
 
 # Добавляем путь к корневой папке проекта (если нужно)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -16,12 +20,13 @@ from telegram.ext import (
     ContextTypes,
 )
 from config import BOT_TOKEN
-from handlers.user import send_task, handle_task_button
+from services.tasks import send_task
+from handlers.user import start, send_task, handle_task_button, handle_code_input
 from handlers.gpt import register_gpt_handlers
 
 # Загрузка ключей
 load_dotenv()
-client = OpenAI()
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -34,6 +39,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("task", send_task))
     app.add_handler(CallbackQueryHandler(handle_task_button))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_input))
     register_gpt_handlers(app)
 
     print("Бот запущен. Ожидаю команды...")

@@ -4,6 +4,7 @@
 ├── .env
 ├── README.md
 ├── core
+├── curators.json
 ├── data
 ├── modules
 │   ├── faq_support
@@ -12,7 +13,6 @@
 │   ├── retr_analyst
 │   ├── tech_writer
 │   └── telegram_bot
-│       ├── __init__.py
 │       ├── ai
 │       │   └── generator.py
 │       ├── config.py
@@ -25,15 +25,21 @@
 │       ├── services
 │       │   └── tasks.py
 │       ├── sheets
-│       │   └── api.py
+│       │   ├── __init__.py
+│       │   └── sheets.py
 │       └── utils
-│           └── helpers.py
+│           ├── __init__.py
+│           ├── helpers.py
+│           └── prompt_builder.py
 ├── project_structure.txt
 ├── project_structure_md.txt
 ├── scripts
 │   ├── debug_env.py
 │   ├── generate_structure.py
 │   ├── hello_gpt.py
-│   └── telegram_bot.py
+│   └── run_bot.py
+├── service_account.json
 ├── tests
+│   ├── test_env.py
+│   └── test_sheets.py
 ```

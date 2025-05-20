@@ -7,20 +7,24 @@ import sys
 import time
 from openai import OpenAI
 
-# Инициализируем клиент (читаем ключ из переменных окружения)
-client = OpenAI()
+# Инициализируем клиента (читаем ключ из переменных окружения)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Собираем вопрос из аргументов CLI
 question = " ".join(sys.argv[1:]) or "Ping?"
 
 t0 = time.time()
-# Новый синтаксис: client.chat.completions.create
+
+# Запрос к OpenAI
 resp = client.chat.completions.create(
-    model="gpt-3.5-turbo",
+    model=OPENAI_MODEL,
     messages=[{"role": "user", "content": question}]
 )
 
-# Берём ответ и статистику
+# Ответ и статистика
 answer = resp.choices[0].message.content.strip()
 tokens = resp.usage.total_tokens
 

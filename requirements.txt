@@ -1,0 +1,7 @@
+python-telegram-bot~=20.3
+openai~=1.23.0
+python-dotenv~=1.0.0
+gspread~=5.7.0
+oauth2client~=4.1.3
+# pytest        # Раскомментируй, если потребуется для тестов
+# google-auth   # Добавим при переходе с oauth2client на современный подход

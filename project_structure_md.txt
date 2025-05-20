@@ -7,40 +7,52 @@
 ├── core
 ├── curators.json
 ├── data
+│   └── prompt.txt
 ├── modules
+│   ├── __init__.py
 │   ├── faq_support
+│   ├── logic
+│   │   ├── generate_response.py
+│   │   └── prompt_builder.py
 │   ├── marketing_advisor
 │   ├── planner_assistant
 │   ├── retr_analyst
 │   ├── tech_writer
 │   └── telegram_bot
+│       ├── __init__.py
 │       ├── ai
+│       │   ├── __init__.py
 │       │   └── generator.py
 │       ├── config.py
 │       ├── handlers
+│       │   ├── __init__.py
+│       │   ├── fallback.py
 │       │   ├── gpt.py
 │       │   └── user.py
 │       ├── keyboards
+│       │   ├── __init__.py
 │       │   └── inline.py
 │       ├── main.py
 │       ├── services
+│       │   ├── __init__.py
 │       │   └── tasks.py
 │       ├── sheets
 │       │   ├── __init__.py
 │       │   └── sheets.py
 │       └── utils
-│           ├── __init__.py
-│           ├── helpers.py
-│           └── prompt_builder.py
+│           └── profile_loader.py
 ├── project_structure.txt
 ├── project_structure_md.txt
 ├── requirements.txt
 ├── scripts
+│   ├── __init__.py
 │   ├── debug_env.py
 │   ├── generate_structure.py
 │   ├── hello_gpt.py
 │   └── run_bot.py
 ├── service_account.json
+├── static
+│   └── welcome.gif
 ├── tests
 │   ├── test_env.py
 │   └── test_sheets.py

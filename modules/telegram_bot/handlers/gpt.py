@@ -1,13 +1,16 @@
 from telegram import Update
 from telegram.ext import MessageHandler, ContextTypes, filters
+
+from modules.telegram_bot.config import BOT_TOKEN, OPENAI_API_KEY, OPENAI_MODEL
+from modules.logic.prompt_builder import build_prompt
+from modules.telegram_bot.utils.profile_loader import get_profile_by_user_id
+
 from openai import OpenAI
-from dotenv import load_dotenv
+import httpx
+import os
 
-from telegram_bot.sheets.sheets import get_profile_by_user_id
-from telegram_bot.utils.prompt_builder import build_prompt
-
-load_dotenv()
-client = OpenAI()
+# Инициализируем клиента с ручным http_client (чистый, без прокси)
+client = OpenAI(api_key=OPENAI_API_KEY, http_client=httpx.Client())
 
 def register_gpt_handlers(app):
     async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -23,8 +26,10 @@ def register_gpt_handlers(app):
 
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+                model=OPENAI_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.8,
+                max_tokens=800
             )
             reply = response.choices[0].message.content.strip()
         except Exception as e:

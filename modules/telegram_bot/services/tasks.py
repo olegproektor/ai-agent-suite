@@ -1,14 +1,18 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from telegram_bot.utils.prompt_builder import build_prompt
-from telegram_bot.sheets.sheets import get_profile_by_user_id
+from modules.logic.prompt_builder import build_prompt
+from modules.telegram_bot.config import OPENAI_MODEL
+from modules.telegram_bot.utils.profile_loader import get_profile_by_user_id
 
-import openai
+import logging
 import os
-from dotenv import load_dotenv
+import httpx
+from openai import OpenAI
 
-load_dotenv()
+# Инициализация OpenAI-клиента с ручным http_client (без прокси)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+client = OpenAI(api_key=OPENAI_API_KEY, http_client=httpx.Client())
 
 async def send_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -19,18 +23,18 @@ async def send_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     prompt = build_prompt(profile, "Сформулируй задание дня")
-    print("🔹 PROMPT GPT:")
-    print(prompt)
-
+    logging.info(f"[PROMPT GPT]: {prompt}")
 
     try:
-        response = openai.chat.completions.create(
-            model="gpt-4o",
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=800
         )
-        reply = response.choices[0].message.content
+        reply = response.choices[0].message.content.strip()
         await update.message.reply_text(reply)
 
     except Exception as e:
+        logging.error(f"[OPENAI ERROR] {e}")
         await update.message.reply_text(f"Ошибка генерации: {e}")

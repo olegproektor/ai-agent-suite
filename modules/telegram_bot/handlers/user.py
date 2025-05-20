@@ -1,15 +1,15 @@
-# handlers/user.py
-
+import os
+import logging
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters
-from telegram_bot.sheets.sheets import (
+from telegram.ext import ContextTypes
+
+from modules.telegram_bot.sheets.sheets import (
     get_profile_by_user_id,
     insert_user_by_code,
     check_code_valid
 )
-from ai.generator import generate_task
-from keyboards.inline import task_buttons
-import logging
+from modules.telegram_bot.ai.generator import generate_task
+from modules.telegram_bot.keyboards.inline import task_buttons
 
 # Временное хранилище пользователей, ожидающих ввод кода
 user_pending_verification = {}
@@ -17,7 +17,7 @@ user_pending_verification = {}
 logging.basicConfig(level=logging.INFO)
 
 # -----------------------------------
-# /start → Запрашивает код доступа
+# /start — приветствие + код
 # -----------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -28,69 +28,64 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ Профиль уже активирован. Используйте /task.")
         return
 
-    await update.message.reply_text("🔐 Введите код доступа, полученный от куратора:")
+    # Попробуем отправить GIF
+    try:
+        gif_path = os.path.join("static", "welcome.gif")
+        if os.path.exists(gif_path):
+            with open(gif_path, "rb") as gif:
+                await update.message.reply_animation(
+                    animation=gif,
+                    caption=(
+                        "👋 Привет. Я — твой персональный ИИ-наставник.\n"
+                        "Я не просто алгоритм или цифровая игрушка. Я создан, чтобы быть внимательным собеседником, который видит в тебе не шаблон, а личность.\n"
+                        "Я распознаю стиль, суть, глубинные запросы — и буду говорить с тобой так, как действительно откликается.\n\n"
+                        "Всё начнётся с одного шага. Введи код доступа, и я настроюсь именно на тебя. 🔐"
+                    )
+                )
+        else:
+            raise FileNotFoundError
+    except Exception as e:
+        logging.warning(f"[GIF] Не удалось отправить welcome.gif: {e}")
+        await update.message.reply_text(
+            "👋 Привет. Я — твой персональный ИИ-наставник.\n"
+            "Я не просто алгоритм или цифровая игрушка. Я создан, чтобы быть внимательным собеседником, который видит в тебе не шаблон, а личность.\n"
+            "Я распознаю стиль, суть, глубинные запросы — и буду говорить с тобой так, как действительно откликается.\n\n"
+            "Всё начнётся с одного шага. Введи код доступа, и я настроюсь именно на тебя. 🔐"
+        )
+
     user_pending_verification[user_id] = True
 
 # -----------------------------------
-# Обработка текста как access-кода
+# Обработка access-кода
 # -----------------------------------
 async def handle_code_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     code = update.message.text.strip()
 
-    if user_id not in user_pending_verification:
-        return  # Не в режиме ожидания
+    profile = get_profile_by_user_id(user_id)
+    if profile:
+        return
 
     if check_code_valid(code):
         insert_user_by_code(user_id, code)
-        await update.message.reply_text("✅ Доступ подтверждён. Используйте /task.")
+        profile = get_profile_by_user_id(user_id)
+        name = profile.get("Имя", "друг")
+
+        await update.message.reply_text(
+            f"✅ Отлично. Я теперь знаю, кто ты, {name}.\n"
+            "С этого момента я не просто отвечаю — я **учу тебя учить себя**.\n\n"
+            "В **базовой версии** я фиксирую твою активность: команды, стиль, субличности.\n"
+            "Это помогает мне предлагать подходящие задания, менять тон общения и держать фокус на твоей цели.\n\n"
+            "В **расширенной версии** я начну:\n"
+            "• запоминать контекст\n"
+            "• анализировать твои паттерны и стиль мышления\n"
+            "• давать отчёты, сценарии и визуальные подсказки\n\n"
+            "🔹 Что ты можешь делать прямо сейчас:\n"
+            "• Напиши что угодно — я отреагирую в твоём стиле\n"
+            "• Получи задание через /task\n"
+            "• Попроси сгенерировать идею — команда /текст\n"
+            "• Сменить субличность — команда /профиль\n\n"
+            "Готов начать? Напиши мне, и ты увидишь, что я действительно понимаю тебя."
+        )
     else:
         await update.message.reply_text("❌ Неверный код. Попробуйте ещё раз или обратитесь к куратору.")
-
-    user_pending_verification.pop(user_id, None)
-
-# -----------------------------------
-# /task → Генерация задания
-# -----------------------------------
-async def send_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    logging.info(f"[TASK] /task от user_id: {user_id}")
-
-    profile = get_profile_by_user_id(user_id)
-    if not profile:
-        await update.message.reply_text("🔐 Профиль не найден. Обратитесь к куратору.")
-        return
-
-    task_text = generate_task(profile)
-    await update.message.reply_text(
-        text=f"📌 Ваше задание:\n\n{task_text}",
-        reply_markup=task_buttons()
-    )
-
-# -----------------------------------
-# Обработка кнопок под сообщением
-# -----------------------------------
-async def handle_task_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
-
-    if query.data == "done":
-        await query.edit_message_text("👍 Задание выполнено!")
-    elif query.data == "skip":
-        await query.edit_message_text("⏭ Задание пропущено.")
-    elif query.data == "retry":
-        profile = get_profile_by_user_id(user_id)
-        if not profile:
-            await context.bot.send_message(
-                chat_id=query.message.chat.id,
-                text="🔐 Профиль не найден. Обратитесь к куратору."
-            )
-            return
-
-        task_text = generate_task(profile)
-        await context.bot.send_message(
-            chat_id=query.message.chat.id,
-            text=f"🔁 Новое задание:\n\n{task_text}",
-            reply_markup=task_buttons()
-        )
